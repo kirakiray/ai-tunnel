@@ -1,0 +1,26 @@
+{
+  "name": "ai-tunnel",
+  "version": "0.1.0",
+  "description": "",
+  "keywords": [
+    "ai",
+    "tunnel",
+    "ai-proxy",
+    "ai-tunnel"
+  ],
+  "homepage": "https://github.com/kirakiray/ai-tunnel#readme",
+  "bugs": {
+    "url": "https://github.com/kirakiray/ai-tunnel/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kirakiray/ai-tunnel.git"
+  },
+  "license": "Apache-2.0",
+  "author": "Yew",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}
