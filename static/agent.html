@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Agent</title>
+    <script src="https://cdn.jsdelivr.net/gh/kirakiray/ofa.js@4.6.12/dist/ofa.min.js"></script>
+  </head>
+  <body>
+    <div style="padding: 20px">
+      <h2>Agent Configuration</h2>
+      <div>
+        <label for="lmstudio-port">LMStudio Port: </label>
+        <input type="number" id="lmstudio-port" min="1" max="65535" />
+      </div>
+      <div style="margin-top: 10px">
+        <label for="agent-address">Agent Address: </label>
+        <input type="text" id="agent-address" style="width: 250px" />
+      </div>
+      <div style="margin-top: 10px">
+        <label for="model-selector">Model: </label>
+        <select id="model-selector" style="width: 250px">
+          <option value="qwen3-4b-2507">qwen3-4b-2507 (default)</option>
+        </select>
+        <button id="refresh-models-btn" style="margin-left: 10px">
+          Refresh Models
+        </button>
+      </div>
+      <div style="margin-top: 10px">
+        <button id="connect-btn">Save</button>
+      </div>
+      <div style="margin-top: 10px">
+        <label for="llmstxt-file">LLMs.txt File: </label>
+        <input type="file" id="llmstxt-file" accept=".txt" />
+        <button id="upload-llmstxt-btn">Upload LLMs.txt</button>
+        <button id="clear-llmstxt-btn" disabled>Clear LLMs.txt</button>
+        <div id="llmstxt-status" style="margin-top: 5px; font-size: 14px"></div>
+        <div style="margin-top: 10px; padding: 10px; background-color: #f0f0f0; border-radius: 5px;">
+          <h4 style="margin-top: 0;">LLMs.txt 功能说明:</h4>
+          <p style="margin: 5px 0;">• 上传包含知识库内容的 LLMs.txt 文件，作为 AI 的系统提示词</p>
+          <p style="margin: 5px 0;">• AI 将使用文件中的内容作为上下文来回答问题</p>
+          <p style="margin: 5px 0;">• 支持清除已上传的文件</p>
+          <p style="margin: 5px 0; font-weight: bold;">提示: 文件内容将作为 System Prompt 发送给 AI</p>
+        </div>
+      </div>
+    </div>
+
+    <script type="module">
+      import Agent from "./agent.js";
+      import { LMStudioClient } from "./lmstudio-client.js";
+
+      const connectBtn = document.getElementById("connect-btn");
+      const refreshModelsBtn = document.getElementById("refresh-models-btn");
+      const uploadLlmstxtBtn = document.getElementById("upload-llmstxt-btn");
+      const clearLlmstxtBtn = document.getElementById("clear-llmstxt-btn");
+      const llmstxtFileInput = document.getElementById("llmstxt-file");
+      const llmstxtStatus = document.getElementById("llmstxt-status");
+
+      // 从 localStorage 加载保存的设置
+      $("#lmstudio-port").value = localStorage.localPort || "1234";
+      $("#agent-address").value =
+        localStorage.agentAddress || `ws://${location.host}/agent`;
+      const savedModel = localStorage.selectedModel || "qwen3-4b-2507";
+      const savedSystemPrompt = localStorage.systemPrompt || "";
+
+      // 页面加载完成后自动连接
+      document.addEventListener("DOMContentLoaded", async () => {
+        // 加载模型列表
+        await loadModelList();
+
+        // 设置选中的模型
+        const modelSelector = document.getElementById("model-selector");
+        if (modelSelector.querySelector(`option[value="${savedModel}"]`)) {
+          modelSelector.value = savedModel;
+        }
+
+        // 检查是否已存在system prompt，如果存在则启用清除按钮
+        if (savedSystemPrompt) {
+          clearLlmstxtBtn.disabled = false;
+          llmstxtStatus.textContent = "LLMs.txt file loaded";
+          llmstxtStatus.style.color = "green";
+        }
+
+        // 自动连接
+        connectAgent();
+      });
+
+      // 刷新模型列表
+      refreshModelsBtn.addEventListener("click", loadModelList);
+
+      // 上传 LLMs.txt 文件
+      uploadLlmstxtBtn.addEventListener("click", () => {
+        const file = llmstxtFileInput.files[0];
+        if (!file) {
+          llmstxtStatus.textContent = "请选择一个文件";
+          llmstxtStatus.style.color = "red";
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          const content = e.target.result;
+          // 保存到 localStorage
+          localStorage.systemPrompt = content;
+          llmstxtStatus.textContent = "文件上传成功，内容已保存";
+          llmstxtStatus.style.color = "green";
+          // 启用清除按钮
+          clearLlmstxtBtn.disabled = false;
+        };
+        reader.onerror = function () {
+          llmstxtStatus.textContent = "文件读取失败";
+          llmstxtStatus.style.color = "red";
+        };
+        reader.readAsText(file);
+      });
+
+      // 清除 LLMs.txt 文件
+      clearLlmstxtBtn.addEventListener("click", () => {
+        // 从 localStorage 中清除 system prompt
+        localStorage.removeItem("systemPrompt");
+        // 禁用清除按钮
+        clearLlmstxtBtn.disabled = true;
+        // 清空文件输入框
+        llmstxtFileInput.value = "";
+        // 更新状态显示
+        llmstxtStatus.textContent = "LLMs.txt file cleared";
+        llmstxtStatus.style.color = "blue";
+      });
+
+      // 保存设置并重新连接
+      connectBtn.addEventListener("click", () => {
+        // 保存设置到 localStorage
+        localStorage.localPort = $("#lmstudio-port").value;
+        localStorage.agentAddress = $("#agent-address").value;
+        localStorage.selectedModel = $("#model-selector").value;
+
+        // 重新连接
+        connectAgent();
+      });
+
+      // 加载模型列表
+      async function loadModelList() {
+        const port = document.getElementById("lmstudio-port").value;
+        const client = new LMStudioClient(`http://localhost:${port}`);
+
+        try {
+          const modelsResponse = await client.models();
+          const modelSelector = document.getElementById("model-selector");
+
+          // 保存当前选中的值
+          const currentValue = modelSelector.value;
+
+          // 清空现有选项
+          modelSelector.innerHTML = "";
+
+          // 添加新选项
+          if (modelsResponse.data && Array.isArray(modelsResponse.data)) {
+            modelsResponse.data.forEach((model) => {
+              const option = document.createElement("option");
+              option.value = model.id;
+              option.textContent = model.id;
+              modelSelector.appendChild(option);
+            });
+          }
+
+          // 如果之前有选中的值，尝试恢复
+          if (modelSelector.querySelector(`option[value="${currentValue}"]`)) {
+            modelSelector.value = currentValue;
+          }
+        } catch (error) {
+          console.error("获取模型列表失败:", error);
+        }
+      }
+
+      // 连接 Agent
+      function connectAgent() {
+        // 断开之前的连接（如果有的话）
+        if (window.agent) {
+          window.agent.disconnect();
+        }
+
+        // 创建新的 agent 实例并连接
+        const port = document.getElementById("lmstudio-port").value;
+        const lmstudioOptions = [`http://localhost:${port}`];
+        window.agent = new Agent({
+          lmstudioOptions,
+          model: $("#model-selector").value,
+        });
+        window.agent.connect($("#agent-address").value);
+      }
+    </script>
+  </body>
+</html>

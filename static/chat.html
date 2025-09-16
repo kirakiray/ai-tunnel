@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>use chat</title>
+    <script src="https://cdn.jsdelivr.net/gh/kirakiray/ofa.js@4.6.12/dist/ofa.min.js"></script>
+  </head>
+  <body>
+    <p>这里尝试使用AI接口</p>
+    <div id="response"></div>
+    <script type="module">
+      import { chat } from "./chat.js";
+
+      // 使用封装好的聊天功能
+      chat({
+        url: "ws://localhost:3000/chat",
+        prompt: "你好，你是谁？",
+        onMessage: ({ content }) => {
+          // 同时将结果显示在页面上
+          document.getElementById("response").innerText = content;
+        },
+      }).catch((error) => {
+        console.error("聊天出错:", error);
+      });
+    </script>
+  </body>
+</html>
