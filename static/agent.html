@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Agent</title>
+    <script src="https://cdn.jsdelivr.net/gh/kirakiray/ofa.js@4.6.12/dist/ofa.min.js"></script>
+  </head>
+  <body>
+    <script type="module">
+      import { LMStudioClient } from "./lmstudio-client.js";
+
+      const ws = new WebSocket("ws://localhost:3000/chat");
+
+      ws.onopen = () => {
+        console.log("WebSocket 连接已打开");
+
+        ws.send(
+          JSON.stringify({
+            id: Math.random().toString(36).slice(2),
+            prompt: "你好，你是谁？",
+          })
+        );
+      };
+
+      ws.onmessage = (event) => {
+        console.log("收到服务器消息:", event.data);
+      };
+
+      // 使用封装后的 LMStudioClient 发送请求
+      const client = new LMStudioClient();
+      client
+        .sendChatMessage(
+          "qwen3-4b-2507",
+          [{ role: "user", content: "你好，你是谁？" }],
+          (content) => {
+            console.log(content);
+          }
+        )
+        .catch((error) => {
+          console.error("请求出错:", error);
+        });
+    </script>
+  </body>
+</html>
