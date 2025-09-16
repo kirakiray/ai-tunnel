@@ -6,12 +6,14 @@ import { fileURLToPath } from 'url';
 // 获取当前文件的目录路径
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+// 获取项目根目录路径
+const rootDir = path.join(__dirname, '..');
 
 // 创建静态文件服务器
 const createStaticServer = () => {
   const server = http.createServer((req, res) => {
-    // 设置静态文件路径，根目录为static目录
-    const staticDir = path.join(__dirname, 'static');
+    // 设置静态文件路径，根目录为项目根目录下的static目录
+    const staticDir = path.join(rootDir, 'static');
     let filePath = path.join(staticDir, req.url === '/' ? '/index.html' : req.url);
     
     // 获取文件扩展名
