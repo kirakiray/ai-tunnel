@@ -9,6 +9,7 @@ export const init = async (options) => {
   const wss = createWebSocketServer(server, {
     agentPath: options?.agentPath,
     chatPath: options?.chatPath,
+    allow: options?.allow,
   });
 
   // 启动服务器
