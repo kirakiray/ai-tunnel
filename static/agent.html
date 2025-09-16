@@ -27,6 +27,14 @@
         console.log("收到服务器消息:", event.data);
       };
 
+      ws.onclose = (event) => {
+        console.log("WebSocket 连接已关闭", event.code, event.reason);
+      };
+
+      ws.onerror = (event) => {
+        console.log("WebSocket 连接错误", event);
+      };
+
       // // 使用封装后的 LMStudioClient 发送请求
       // const client = new LMStudioClient();
       // client
