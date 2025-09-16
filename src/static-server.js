@@ -43,7 +43,8 @@ const createStaticServer = () => {
         if (err.code === "ENOENT") {
           // 文件未找到，直接返回404响应
           res.writeHead(404, { "Content-Type": "text/html" });
-          res.end("<h1>404 Not Found</h1>", "utf-8");
+          res.end();
+          // res.end("<h1>404 Not Found</h1>", "utf-8");
         } else {
           // 服务器错误
           res.writeHead(500);

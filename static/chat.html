@@ -12,8 +12,6 @@
       const ws = new WebSocket("ws://localhost:3000/chat");
 
       ws.onopen = () => {
-        console.log("WebSocket 连接已打开");
-
         const chatId = Math.random().toString(32).slice(2);
 
         ws.onmessage = (event) => {
