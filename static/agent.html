@@ -30,8 +30,6 @@
               "qwen3-4b-2507",
               [{ role: "user", content: data.prompt }],
               (e) => {
-                console.log(e);
-
                 // 回复用户端
                 ws.send(
                   JSON.stringify({
@@ -42,6 +40,15 @@
                 );
               }
             )
+            .then((e) => {
+              ws.send(
+                JSON.stringify({
+                  id: data.id,
+                  targetId: data.clientId,
+                  end: true,
+                })
+              );
+            })
             .catch((error) => {
               console.error("请求出错:", error);
             });

@@ -23,7 +23,7 @@ const createWebSocketServer = (server) => {
         })
       );
     } else if (req.url === "/chat") {
-      ws._client_id = Math.random();
+      ws._client_id = Math.random().toString(16).slice(2);
       clients.set(ws._client_id, ws);
 
       ws.send(
@@ -37,14 +37,6 @@ const createWebSocketServer = (server) => {
       ws.close(1008, "Unsupported path");
       return;
     }
-
-    // 发送欢迎消息
-    ws.send(
-      JSON.stringify({
-        type: "welcome",
-        message: "Connected to WebSocket server",
-      })
-    );
 
     // 监听客户端消息
     ws.on("message", (data) => {
@@ -73,8 +65,8 @@ const createWebSocketServer = (server) => {
         if (targetWs) {
           targetWs.send(
             JSON.stringify({
-              id: respData.id,
-              content: respData.content,
+              ...respData,
+              targetId: undefined,
             })
           );
         }
