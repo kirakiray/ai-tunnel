@@ -1,155 +1,158 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>WebSocket 连接测试</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        .container {
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-        input, button {
-            padding: 10px;
-            margin: 5px;
-        }
-        #messages {
-            height: 300px;
-            overflow-y: scroll;
-            border: 1px solid #eee;
-            padding: 10px;
-            background-color: #f9f9f9;
-        }
-        .message {
-            margin: 5px 0;
-            padding: 5px;
-            border-radius: 3px;
-        }
-        .received {
-            background-color: #e3f2fd;
-        }
-        .sent {
-            background-color: #f3e5f5;
-        }
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .container {
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        padding: 20px;
+        margin-bottom: 20px;
+      }
+      input,
+      button {
+        padding: 10px;
+        margin: 5px;
+      }
+      #messages {
+        height: 300px;
+        overflow-y: scroll;
+        border: 1px solid #eee;
+        padding: 10px;
+        background-color: #f9f9f9;
+      }
+      .message {
+        margin: 5px 0;
+        padding: 5px;
+        border-radius: 3px;
+      }
+      .received {
+        background-color: #e3f2fd;
+      }
+      .sent {
+        background-color: #f3e5f5;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <h1>WebSocket 连接测试</h1>
-    
+
     <div class="container">
-        <h2>连接状态</h2>
-        <div id="status">未连接</div>
-        <button id="connectBtn">连接</button>
-        <button id="disconnectBtn">断开连接</button>
+      <h2>连接状态</h2>
+      <div id="status">未连接</div>
+      <button id="connectBtn">连接</button>
+      <button id="disconnectBtn">断开连接</button>
     </div>
-    
+
     <div class="container">
-        <h2>发送消息</h2>
-        <input type="text" id="messageInput" placeholder="输入消息...">
-        <button id="sendBtn">发送</button>
+      <h2>发送消息</h2>
+      <input type="text" id="messageInput" placeholder="输入消息..." />
+      <button id="sendBtn">发送</button>
     </div>
-    
+
     <div class="container">
-        <h2>消息记录</h2>
-        <div id="messages"></div>
+      <h2>消息记录</h2>
+      <div id="messages"></div>
     </div>
 
     <script>
-        let socket = null;
-        
-        // 获取DOM元素
-        const statusDiv = document.getElementById('status');
-        const connectBtn = document.getElementById('connectBtn');
-        const disconnectBtn = document.getElementById('disconnectBtn');
-        const messageInput = document.getElementById('messageInput');
-        const sendBtn = document.getElementById('sendBtn');
-        const messagesDiv = document.getElementById('messages');
-        
-        // 连接WebSocket
-        connectBtn.addEventListener('click', () => {
-            if (socket && socket.readyState === WebSocket.OPEN) {
-                showMessage('已经连接到服务器', 'received');
-                return;
-            }
-            
-            // 创建WebSocket连接
-            socket = new WebSocket(`ws://localhost:${window.location.port || 3000}`);
-            
-            // 连接成功
-            socket.onopen = function(event) {
-                statusDiv.textContent = '已连接';
-                statusDiv.style.color = 'green';
-                showMessage('连接到WebSocket服务器', 'received');
-            };
-            
-            // 接收消息
-            socket.onmessage = function(event) {
-                const data = JSON.parse(event.data);
-                showMessage(`收到: ${data.message}`, 'received');
-            };
-            
-            // 连接关闭
-            socket.onclose = function(event) {
-                statusDiv.textContent = '未连接';
-                statusDiv.style.color = 'red';
-                showMessage('与服务器断开连接', 'received');
-            };
-            
-            // 连接错误
-            socket.onerror = function(error) {
-                statusDiv.textContent = '连接错误';
-                statusDiv.style.color = 'red';
-                showMessage(`错误: ${error.message}`, 'received');
-            };
-        });
-        
-        // 断开连接
-        disconnectBtn.addEventListener('click', () => {
-            if (socket) {
-                socket.close();
-                statusDiv.textContent = '未连接';
-                statusDiv.style.color = 'red';
-            }
-        });
-        
-        // 发送消息
-        sendBtn.addEventListener('click', () => {
-            if (socket && socket.readyState === WebSocket.OPEN) {
-                const message = messageInput.value;
-                if (message.trim() !== '') {
-                    socket.send(message);
-                    showMessage(`发送: ${message}`, 'sent');
-                    messageInput.value = '';
-                }
-            } else {
-                showMessage('请先连接到服务器', 'received');
-            }
-        });
-        
-        // 回车发送消息
-        messageInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                sendBtn.click();
-            }
-        });
-        
-        // 显示消息
-        function showMessage(message, type) {
-            const messageElement = document.createElement('div');
-            messageElement.classList.add('message');
-            messageElement.classList.add(type);
-            messageElement.textContent = message;
-            messagesDiv.appendChild(messageElement);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      let socket = null;
+
+      // 获取DOM元素
+      const statusDiv = document.getElementById("status");
+      const connectBtn = document.getElementById("connectBtn");
+      const disconnectBtn = document.getElementById("disconnectBtn");
+      const messageInput = document.getElementById("messageInput");
+      const sendBtn = document.getElementById("sendBtn");
+      const messagesDiv = document.getElementById("messages");
+
+      // 连接WebSocket
+      connectBtn.addEventListener("click", () => {
+        if (socket && socket.readyState === WebSocket.OPEN) {
+          showMessage("已经连接到服务器", "received");
+          return;
         }
+
+        // 创建WebSocket连接
+        socket = new WebSocket(
+          `ws://localhost:${window.location.port || 3000}`
+        );
+
+        // 连接成功
+        socket.onopen = function (event) {
+          statusDiv.textContent = "已连接";
+          statusDiv.style.color = "green";
+          showMessage("连接到WebSocket服务器", "received");
+        };
+
+        // 接收消息
+        socket.onmessage = function (event) {
+          const data = JSON.parse(event.data);
+          showMessage(`收到: ${data.message}`, "received");
+        };
+
+        // 连接关闭
+        socket.onclose = function (event) {
+          statusDiv.textContent = "未连接";
+          statusDiv.style.color = "red";
+          showMessage("与服务器断开连接", "received");
+        };
+
+        // 连接错误
+        socket.onerror = function (error) {
+          statusDiv.textContent = "连接错误";
+          statusDiv.style.color = "red";
+          showMessage(`错误: ${error.message}`, "received");
+        };
+      });
+
+      // 断开连接
+      disconnectBtn.addEventListener("click", () => {
+        if (socket) {
+          socket.close();
+          statusDiv.textContent = "未连接";
+          statusDiv.style.color = "red";
+        }
+      });
+
+      // 发送消息
+      sendBtn.addEventListener("click", () => {
+        if (socket && socket.readyState === WebSocket.OPEN) {
+          const message = messageInput.value;
+          if (message.trim() !== "") {
+            socket.send(message);
+            showMessage(`发送: ${message}`, "sent");
+            messageInput.value = "";
+          }
+        } else {
+          showMessage("请先连接到服务器", "received");
+        }
+      });
+
+      // 回车发送消息
+      messageInput.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") {
+          sendBtn.click();
+        }
+      });
+
+      // 显示消息
+      function showMessage(message, type) {
+        const messageElement = document.createElement("div");
+        messageElement.classList.add("message");
+        messageElement.classList.add(type);
+        messageElement.textContent = message;
+        messagesDiv.appendChild(messageElement);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      }
     </script>
-</body>
+  </body>
 </html>

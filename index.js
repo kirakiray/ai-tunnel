@@ -1,11 +1,7 @@
-import createStaticServer from './src/static-server.js';
-import createWebSocketServer from './src/websocket-server.js';
-import { fileURLToPath } from 'url';
-import path from 'path';
+import createStaticServer from "./src/static-server.js";
+import createWebSocketServer from "./src/websocket-server.js";
 
 // 获取当前文件的目录路径
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 // 创建静态服务器
 const server = createStaticServer();
