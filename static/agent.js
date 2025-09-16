@@ -1,7 +1,7 @@
 import { LMStudioClient } from "./lmstudio-client.js";
 
 class Agent {
-  constructor(lmstudioOptions) {
+  constructor({ lmstudioOptions } = {}) {
     this.ws = null;
     this.lmstudioOptions = lmstudioOptions || [];
   }
