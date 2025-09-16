@@ -1,8 +1,9 @@
 import { LMStudioClient } from "./lmstudio-client.js";
 
 class Agent {
-  constructor() {
+  constructor(lmstudioOptions) {
     this.ws = null;
+    this.lmstudioOptions = lmstudioOptions;
   }
 
   connect(url) {
@@ -19,7 +20,7 @@ class Agent {
 
       if (data.clientId) {
         // 有用户端来了
-        const client = new LMStudioClient();
+        const client = new LMStudioClient(...this.lmstudioOptions);
 
         client
           .sendChatMessage(
