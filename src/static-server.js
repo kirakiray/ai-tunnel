@@ -46,11 +46,9 @@ const createStaticServer = () => {
     fs.readFile(filePath, (err, content) => {
       if (err) {
         if (err.code === 'ENOENT') {
-          // 文件未找到
-          fs.readFile(path.join(staticDir, '404.html'), (err, content) => {
-            res.writeHead(404, { 'Content-Type': 'text/html' });
-            res.end(content, 'utf-8');
-          });
+          // 文件未找到，直接返回404响应
+          res.writeHead(404, { 'Content-Type': 'text/html' });
+          res.end('<h1>404 Not Found</h1>', 'utf-8');
         } else {
           // 服务器错误
           res.writeHead(500);
