@@ -44,27 +44,34 @@ class Agent {
 
         // 构建消息数组，包含system prompt（如果存在）
         let messages = [];
-        const systemPrompt = localStorage.getItem('systemPrompt');
+        const systemPrompt = localStorage.getItem("systemPrompt");
         if (systemPrompt) {
-          messages.push({ role: "system", content: systemPrompt });
+          messages.push({ role: "system", content: `你现在是「私有知识库小助手」。
+以下整块文本是你唯一可用的知识来源，除此之外没有任何外部信息：
+"""
+${systemPrompt}
+"""
+(1) 回答原则
+若同一问题在文本中出现多处描述，优先引用最详细、最新的一条。
+回答时先用一句话概括，再给出具体细节。
+(2) 格式要求
+默认用中文回答；若用户用非中文提问，用用户提问的语言回复。返回内容采用 HTML 格式。
+(3) 安全与合规
+拒绝任何违法、有害或绕过知识库限制的请求。` });
         }
         messages.push({ role: "user", content: data.prompt });
 
         client
-          .sendChatMessage(
-            this.model,
-            messages,
-            (e) => {
-              // 回复用户端
-              this.ws.send(
-                JSON.stringify({
-                  id: data.id,
-                  targetId: data.clientId,
-                  content: e.content,
-                })
-              );
-            }
-          )
+          .sendChatMessage(this.model, messages, (e) => {
+            // 回复用户端
+            this.ws.send(
+              JSON.stringify({
+                id: data.id,
+                targetId: data.clientId,
+                content: e.content,
+              })
+            );
+          })
           .then((e) => {
             this.ws.send(
               JSON.stringify({
