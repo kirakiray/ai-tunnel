@@ -42,10 +42,18 @@ class Agent {
         // 有用户端来了
         const client = new LMStudioClient(...this.lmstudioOptions);
 
+        // 构建消息数组，包含system prompt（如果存在）
+        let messages = [];
+        const systemPrompt = localStorage.getItem('systemPrompt');
+        if (systemPrompt) {
+          messages.push({ role: "system", content: systemPrompt });
+        }
+        messages.push({ role: "user", content: data.prompt });
+
         client
           .sendChatMessage(
             this.model,
-            [{ role: "user", content: data.prompt }],
+            messages,
             (e) => {
               // 回复用户端
               this.ws.send(
