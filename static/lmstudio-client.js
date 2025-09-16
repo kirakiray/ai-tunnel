@@ -9,6 +9,19 @@ export class LMStudioClient {
   }
 
   /**
+   * 获取模型列表
+   * @returns {Promise} - 返回模型列表的 Promise
+   */
+  async models() {
+    return fetch(this.baseUrl + "/v1/models", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }).then((response) => response.json());
+  }
+
+  /**
    * 发送聊天消息到 LMStudio API
    * @param {string} model - 使用的模型名称
    * @param {Array} messages - 消息历史数组
