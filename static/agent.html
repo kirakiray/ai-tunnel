@@ -21,7 +21,7 @@
 
         console.log("收到服务器消息:", data);
 
-        if (data.id) {
+        if (data.clientId) {
           // 有用户端来了
           const client = new LMStudioClient();
 
@@ -35,7 +35,8 @@
                 // 回复用户端
                 ws.send(
                   JSON.stringify({
-                    targetId: data.id,
+                    id: data.id,
+                    targetId: data.clientId,
                     content: e.content,
                   })
                 );
@@ -54,20 +55,6 @@
       ws.onerror = (event) => {
         console.log("WebSocket 连接错误", event);
       };
-
-      // // 使用封装后的 LMStudioClient 发送请求
-      // const client = new LMStudioClient();
-      // client
-      //   .sendChatMessage(
-      //     "qwen3-4b-2507",
-      //     [{ role: "user", content: "你好，你是谁？" }],
-      //     (content) => {
-      //       console.log(content);
-      //     }
-      //   )
-      //   .catch((error) => {
-      //     console.error("请求出错:", error);
-      //   });
     </script>
   </body>
 </html>

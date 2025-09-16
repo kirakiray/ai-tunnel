@@ -23,6 +23,9 @@ const createWebSocketServer = (server) => {
         })
       );
     } else if (req.url === "/chat") {
+      ws._client_id = Math.random();
+      clients.set(ws._client_id, ws);
+
       ws.send(
         JSON.stringify({
           type: "welcome",
@@ -54,30 +57,34 @@ const createWebSocketServer = (server) => {
       }
 
       if (req.url === "/chat") {
-        if (respData.type === "init") {
-          ws._chat_id = respData.id;
-          clients.set(respData.id, ws);
-          return;
-        }
-
         // 转发到agent
         for (let [agent, agentInfo] of Array.from(agents)) {
-          agent.send(JSON.stringify(respData));
+          agent.send(
+            JSON.stringify({
+              clientId: ws._client_id,
+              ...respData,
+            })
+          );
         }
       } else if (ws._is_agent) {
         // 转发到目标用户
         const targetWs = clients.get(respData.targetId);
 
         if (targetWs) {
-          targetWs.send(JSON.stringify(respData));
+          targetWs.send(
+            JSON.stringify({
+              id: respData.id,
+              content: respData.content,
+            })
+          );
         }
       }
     });
 
     // 监听连接关闭
     ws.on("close", () => {
-      if (ws._chat_id) {
-        clients.delete(ws._chat_id);
+      if (ws._client_id) {
+        clients.delete(ws._client_id);
       } else {
         // 从agents中移除连接
         agents.delete(ws);
