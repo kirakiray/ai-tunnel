@@ -7,10 +7,34 @@
     <script src="https://cdn.jsdelivr.net/gh/kirakiray/ofa.js@4.6.12/dist/ofa.min.js"></script>
   </head>
   <body>
+    <div style="padding: 20px">
+      <h2>Agent Configuration</h2>
+      <div>
+        <label for="lmstudio-port">LMStudio Port: </label>
+        <input type="number" id="lmstudio-port" min="1" max="65535" />
+        <button id="connect-btn">Connect</button>
+      </div>
+    </div>
+
     <script type="module">
       import Agent from "./agent.js";
-      const agent = new Agent();
-      agent.connect("ws://localhost:3000/agent2");
+
+      const connectBtn = document.getElementById("connect-btn");
+
+      $("#lmstudio-port").value = localStorage.localPort || "1234";
+
+      connectBtn.addEventListener("click", () => {
+        localStorage.localPort = $("#lmstudio-port").value;
+        location.reload();
+      });
+
+      // 页面加载完成后自动连接
+      document.addEventListener("DOMContentLoaded", () => {
+        const port = document.getElementById("lmstudio-port").value;
+        const lmstudioOptions = [`http://localhost:${port}`];
+        window.agent = new Agent({ lmstudioOptions });
+        window.agent.connect("ws://localhost:3000/agent2");
+      });
     </script>
   </body>
 </html>

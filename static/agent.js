@@ -48,6 +48,15 @@ class Agent {
           })
           .catch((error) => {
             console.error("请求出错:", error);
+
+            // 发送错误信息给客户端
+            this.ws.send(
+              JSON.stringify({
+                id: data.id,
+                targetId: data.clientId,
+                error: error.message,
+              })
+            );
           });
       }
     };
