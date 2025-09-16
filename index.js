@@ -6,7 +6,10 @@ export const init = async (options) => {
   const server = createStaticServer();
 
   // 创建WebSocket服务器
-  const wss = createWebSocketServer(server);
+  const wss = createWebSocketServer(server, {
+    agentPath: options?.agentPath,
+    chatPath: options?.chatPath,
+  });
 
   // 启动服务器
   const PORT = options?.port || 3000;

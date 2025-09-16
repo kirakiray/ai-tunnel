@@ -1,15 +1,19 @@
 import { WebSocketServer } from "ws";
 
 // 创建WebSocket服务器
-const createWebSocketServer = (server) => {
+const createWebSocketServer = (server, options = {}) => {
   const wss = new WebSocketServer({ server });
+
+  // 默认路径配置
+  const agentPath = options.agentPath || "/agent";
+  const chatPath = options.chatPath || "/chat";
 
   const agents = new Map();
   const clients = new Map();
 
   wss.on("connection", (ws, req) => {
     // 发送欢迎消息
-    if (req.url === "/agent") {
+    if (req.url === agentPath) {
       agents.set(ws, {
         used: 0, // 已经使用的量
       });
@@ -22,7 +26,7 @@ const createWebSocketServer = (server) => {
           message: "Connected to Agent WebSocket server",
         })
       );
-    } else if (req.url === "/chat") {
+    } else if (req.url === chatPath) {
       ws._client_id = Math.random().toString(16).slice(2);
       clients.set(ws._client_id, ws);
 
@@ -48,7 +52,7 @@ const createWebSocketServer = (server) => {
         return;
       }
 
-      if (req.url === "/chat") {
+      if (req.url === chatPath) {
         // 转发到agent
         for (let [agent, agentInfo] of Array.from(agents)) {
           agent.send(
