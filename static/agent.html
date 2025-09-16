@@ -8,60 +8,9 @@
   </head>
   <body>
     <script type="module">
-      import { LMStudioClient } from "./lmstudio-client.js";
-
-      const ws = new WebSocket("ws://localhost:3000/agent");
-
-      ws.onopen = () => {
-        console.log("WebSocket 连接已打开");
-      };
-
-      ws.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-
-        console.log("收到服务器消息:", data);
-
-        if (data.clientId) {
-          // 有用户端来了
-          const client = new LMStudioClient();
-
-          client
-            .sendChatMessage(
-              "qwen3-4b-2507",
-              [{ role: "user", content: data.prompt }],
-              (e) => {
-                // 回复用户端
-                ws.send(
-                  JSON.stringify({
-                    id: data.id,
-                    targetId: data.clientId,
-                    content: e.content,
-                  })
-                );
-              }
-            )
-            .then((e) => {
-              ws.send(
-                JSON.stringify({
-                  id: data.id,
-                  targetId: data.clientId,
-                  end: true,
-                })
-              );
-            })
-            .catch((error) => {
-              console.error("请求出错:", error);
-            });
-        }
-      };
-
-      ws.onclose = (event) => {
-        console.log("WebSocket 连接已关闭", event.code, event.reason);
-      };
-
-      ws.onerror = (event) => {
-        console.log("WebSocket 连接错误", event);
-      };
+      import Agent from "./agent.js";
+      const agent = new Agent();
+      agent.connect("ws://localhost:3000/agent");
     </script>
   </body>
 </html>
