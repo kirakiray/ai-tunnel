@@ -14,13 +14,19 @@
       ws.onopen = () => {
         console.log("WebSocket 连接已打开");
 
+        const chatId = Math.random().toString(32).slice(2);
+
         ws.onmessage = (event) => {
-          console.log("收到服务器消息:", event.data);
+          const data = JSON.parse(event.data);
+
+          if (data.id === chatId) {
+            console.log(data.content);
+          }
         };
 
         ws.send(
           JSON.stringify({
-            id: Math.random().toString(32).slice(2),
+            id: chatId,
             prompt: "你好，你是谁？",
           })
         );
