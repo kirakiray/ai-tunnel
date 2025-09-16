@@ -23,25 +23,97 @@
         />
       </div>
       <div style="margin-top: 10px">
+        <label for="model-selector">Model: </label>
+        <select id="model-selector" style="width: 250px">
+          <option value="qwen3-4b-2507">qwen3-4b-2507 (default)</option>
+        </select>
+        <button id="refresh-models-btn" style="margin-left: 10px">
+          Refresh Models
+        </button>
+      </div>
+      <div style="margin-top: 10px">
         <button id="connect-btn">Save</button>
       </div>
     </div>
 
     <script type="module">
       import Agent from "./agent.js";
+      import { LMStudioClient } from "./lmstudio-client.js";
 
       const connectBtn = document.getElementById("connect-btn");
+      const refreshModelsBtn = document.getElementById("refresh-models-btn");
 
       // 从 localStorage 加载保存的设置
       $("#lmstudio-port").value = localStorage.localPort || "1234";
       $("#agent-address").value =
-        localStorage.agentAddress || `ws://${location.host}/agent2`;
+        localStorage.agentAddress || `ws://${location.host}/agent`;
+      const savedModel = localStorage.selectedModel || "qwen3-4b-2507";
 
+      // 页面加载完成后自动连接
+      document.addEventListener("DOMContentLoaded", async () => {
+        // 加载模型列表
+        await loadModelList();
+
+        // 设置选中的模型
+        const modelSelector = document.getElementById("model-selector");
+        if (modelSelector.querySelector(`option[value="${savedModel}"]`)) {
+          modelSelector.value = savedModel;
+        }
+
+        // 自动连接
+        connectAgent();
+      });
+
+      // 刷新模型列表
+      refreshModelsBtn.addEventListener("click", loadModelList);
+
+      // 保存设置并重新连接
       connectBtn.addEventListener("click", () => {
         // 保存设置到 localStorage
         localStorage.localPort = $("#lmstudio-port").value;
         localStorage.agentAddress = $("#agent-address").value;
+        localStorage.selectedModel = $("#model-selector").value;
 
+        // 重新连接
+        connectAgent();
+      });
+
+      // 加载模型列表
+      async function loadModelList() {
+        const port = document.getElementById("lmstudio-port").value;
+        const client = new LMStudioClient(`http://localhost:${port}`);
+
+        try {
+          const modelsResponse = await client.models();
+          const modelSelector = document.getElementById("model-selector");
+
+          // 保存当前选中的值
+          const currentValue = modelSelector.value;
+
+          // 清空现有选项
+          modelSelector.innerHTML = "";
+
+          // 添加新选项
+          if (modelsResponse.data && Array.isArray(modelsResponse.data)) {
+            modelsResponse.data.forEach((model) => {
+              const option = document.createElement("option");
+              option.value = model.id;
+              option.textContent = model.id;
+              modelSelector.appendChild(option);
+            });
+          }
+
+          // 如果之前有选中的值，尝试恢复
+          if (modelSelector.querySelector(`option[value="${currentValue}"]`)) {
+            modelSelector.value = currentValue;
+          }
+        } catch (error) {
+          console.error("获取模型列表失败:", error);
+        }
+      }
+
+      // 连接 Agent
+      function connectAgent() {
         // 断开之前的连接（如果有的话）
         if (window.agent) {
           window.agent.disconnect();
@@ -50,17 +122,12 @@
         // 创建新的 agent 实例并连接
         const port = document.getElementById("lmstudio-port").value;
         const lmstudioOptions = [`http://localhost:${port}`];
-        window.agent = new Agent({ lmstudioOptions });
+        window.agent = new Agent({
+          lmstudioOptions,
+          model: $("#model-selector").value,
+        });
         window.agent.connect($("#agent-address").value);
-      });
-
-      // 页面加载完成后自动连接
-      document.addEventListener("DOMContentLoaded", () => {
-        const port = document.getElementById("lmstudio-port").value;
-        const lmstudioOptions = [`http://localhost:${port}`];
-        window.agent = new Agent({ lmstudioOptions });
-        window.agent.connect($("#agent-address").value);
-      });
+      }
     </script>
   </body>
 </html>

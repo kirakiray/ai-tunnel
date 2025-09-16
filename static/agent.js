@@ -1,9 +1,10 @@
 import { LMStudioClient } from "./lmstudio-client.js";
 
 class Agent {
-  constructor({ lmstudioOptions } = {}) {
+  constructor({ lmstudioOptions, model } = {}) {
     this.ws = null;
     this.lmstudioOptions = lmstudioOptions || [];
+    this.model = model || "qwen3-4b-2507";
   }
 
   connect(url) {
@@ -24,7 +25,7 @@ class Agent {
 
         client
           .sendChatMessage(
-            "qwen3-4b-2507",
+            this.model,
             [{ role: "user", content: data.prompt }],
             (e) => {
               // 回复用户端
