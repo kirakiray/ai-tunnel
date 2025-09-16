@@ -1,6 +1,6 @@
-export const chat = async (prompt, onMessage) => {
+export const chat = async ({ prompt, onMessage, url = "ws://localhost:3000/chat" }) => {
   return new Promise((resolve, reject) => {
-    const ws = new WebSocket("ws://localhost:3000/chat");
+    const ws = new WebSocket(url);
 
     const chatId = Math.random().toString(32).slice(2);
 

@@ -13,9 +13,13 @@
       import { chat } from "./chat.js";
 
       // 使用封装好的聊天功能
-      chat("你好，你是谁？", ({ content }) => {
-        // 同时将结果显示在页面上
-        document.getElementById("response").innerText = content;
+      chat({
+        url: "ws://localhost:3000/chat",
+        prompt: "你好，你是谁？",
+        onMessage: ({ content }) => {
+          // 同时将结果显示在页面上
+          document.getElementById("response").innerText = content;
+        },
       }).catch((error) => {
         console.error("聊天出错:", error);
       });
