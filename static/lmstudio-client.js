@@ -79,7 +79,10 @@ export class LMStudioClient {
                   ) {
                     // 调用回调函数处理接收到的内容
                     if (onChunkReceived) {
-                      onChunkReceived(data.choices[0].delta.content);
+                      onChunkReceived({
+                        data,
+                        content: data.choices[0].delta.content,
+                      });
                     }
                   }
                 } catch (e) {
