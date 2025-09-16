@@ -14,17 +14,37 @@
 
       ws.onopen = () => {
         console.log("WebSocket 连接已打开");
-
-        // ws.send(
-        //   JSON.stringify({
-        //     id: Math.random().toString(36).slice(2),
-        //     prompt: "你好，你是谁？",
-        //   })
-        // );
       };
 
       ws.onmessage = (event) => {
-        console.log("收到服务器消息:", event.data);
+        const data = JSON.parse(event.data);
+
+        console.log("收到服务器消息:", data);
+
+        if (data.id) {
+          // 有用户端来了
+          const client = new LMStudioClient();
+
+          client
+            .sendChatMessage(
+              "qwen3-4b-2507",
+              [{ role: "user", content: data.prompt }],
+              (e) => {
+                console.log(e);
+
+                // 回复用户端
+                ws.send(
+                  JSON.stringify({
+                    targetId: data.id,
+                    content: e.content,
+                  })
+                );
+              }
+            )
+            .catch((error) => {
+              console.error("请求出错:", error);
+            });
+        }
       };
 
       ws.onclose = (event) => {

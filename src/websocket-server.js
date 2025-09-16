@@ -5,6 +5,7 @@ const createWebSocketServer = (server) => {
   const wss = new WebSocketServer({ server });
 
   const agents = new Map();
+  const clients = new Map();
 
   wss.on("connection", (ws, req) => {
     // 发送欢迎消息
@@ -12,6 +13,9 @@ const createWebSocketServer = (server) => {
       agents.set(ws, {
         used: 0, // 已经使用的量
       });
+
+      ws._is_agent = true;
+
       ws.send(
         JSON.stringify({
           type: "welcome",
@@ -41,18 +45,43 @@ const createWebSocketServer = (server) => {
 
     // 监听客户端消息
     ws.on("message", (data) => {
-      console.log("Received message:", data.toString());
+      // console.log("Received message:", data.toString());
+      let respData;
+      try {
+        respData = JSON.parse(data);
+      } catch (err) {
+        return;
+      }
 
-      // 回显消息
-      ws.send(
-        JSON.stringify({ type: "echo", message: `Echo: ${data.toString()}` })
-      );
+      if (req.url === "/chat") {
+        if (respData.type === "init") {
+          ws._chat_id = respData.id;
+          clients.set(respData.id, ws);
+          return;
+        }
+
+        // 转发到agent
+        for (let [agent, agentInfo] of Array.from(agents)) {
+          agent.send(JSON.stringify(respData));
+        }
+      } else if (ws._is_agent) {
+        // 转发到目标用户
+        const targetWs = clients.get(respData.targetId);
+
+        if (targetWs) {
+          targetWs.send(JSON.stringify(respData));
+        }
+      }
     });
 
     // 监听连接关闭
     ws.on("close", () => {
-      // 从agents中移除连接
-      agents.delete(ws);
+      if (ws._chat_id) {
+        clients.delete(ws._chat_id);
+      } else {
+        // 从agents中移除连接
+        agents.delete(ws);
+      }
       console.log("Client disconnected");
     });
   });
