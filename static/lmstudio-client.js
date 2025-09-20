@@ -13,12 +13,9 @@ export class LMStudioClient {
    * @returns {Promise} - 返回模型列表的 Promise
    */
   async models() {
-    return fetch(this.baseUrl + "/v1/models", {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    }).then((response) => response.json());
+    return fetch(this.baseUrl + "/v1/models", {}).then((response) =>
+      response.json()
+    );
   }
 
   /**
