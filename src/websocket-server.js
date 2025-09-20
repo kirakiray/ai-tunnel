@@ -97,6 +97,13 @@ const createWebSocketServer = (server, options = {}) => {
         return;
       }
 
+      // 处理ping消息
+      if (respData.type === "ping") {
+        console.log("收到ping消息，发送pong消息");
+        ws.send(JSON.stringify({ type: "pong" }));
+        return;
+      }
+
       if (req.url === chatPath) {
         // 转发到agent
         for (let [agent, agentInfo] of Array.from(agents)) {

@@ -16,6 +16,11 @@ class Agent {
     this.maxReconnectDelay = 5000;
     // 重连定时器，用于控制重连的延迟执行，初始化为 null
     this.reconnectTimer = null;
+    // Ping/Pong相关属性
+    this.pingInterval = null;
+    this.pingIntervalTime = 30000; // 30秒发送一次ping
+    this.pongTimeout = null;
+    this.pongTimeoutTime = 5000; // 5秒内未收到pong则认为连接已断开
     this.url = null;
   }
 
@@ -31,10 +36,19 @@ class Agent {
       console.log("WebSocket 连接已打开");
       // 连接成功时重置重连尝试次数
       this.reconnectAttempts = 0;
+      // 启动ping interval
+      this.startPing();
     };
 
     this.ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
+
+      // 处理pong消息
+      if (data.type === "pong") {
+        console.log("收到pong消息");
+        this.clearPongTimeout();
+        return;
+      }
 
       console.log("收到服务器消息:", data);
 
@@ -98,12 +112,48 @@ ${systemPrompt}
 
     this.ws.onclose = (event) => {
       console.log("WebSocket 连接已关闭", event.code, event.reason);
+      this.cleanupPing();
       this.reconnect();
     };
 
     this.ws.onerror = (event) => {
       console.log("WebSocket 连接错误", event);
     };
+  }
+
+  // 启动ping interval
+  startPing() {
+    this.pingInterval = setInterval(() => {
+      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+        console.log("发送ping消息");
+        this.ws.send(JSON.stringify({ type: "ping" }));
+        // 设置pong超时检查
+        this.pongTimeout = setTimeout(() => {
+          console.log("未收到pong响应，关闭连接");
+          this.ws.close();
+        }, this.pongTimeoutTime);
+      }
+    }, this.pingIntervalTime);
+  }
+
+  // 清除pong超时定时器
+  clearPongTimeout() {
+    if (this.pongTimeout) {
+      clearTimeout(this.pongTimeout);
+      this.pongTimeout = null;
+    }
+  }
+
+  // 清理ping相关资源
+  cleanupPing() {
+    if (this.pingInterval) {
+      clearInterval(this.pingInterval);
+      this.pingInterval = null;
+    }
+    if (this.pongTimeout) {
+      clearTimeout(this.pongTimeout);
+      this.pongTimeout = null;
+    }
   }
 
   reconnect() {
@@ -142,6 +192,9 @@ ${systemPrompt}
     if (this.ws) {
       this.ws.close();
     }
+
+    // 清理ping相关资源
+    this.cleanupPing();
 
     // 清除重连定时器
     if (this.reconnectTimer) {
