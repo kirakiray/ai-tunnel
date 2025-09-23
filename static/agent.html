@@ -195,9 +195,11 @@
         // 创建新的 agent 实例并连接
         const port = document.getElementById("lmstudio-port").value;
         const lmstudioOptions = [`http://localhost:${port}`];
+        const systemPrompt = localStorage.getItem("systemPrompt") || "";
         window.agent = new Agent({
           lmstudioOptions,
           model: $("#model-selector").value,
+          systemPrompt: systemPrompt,
         });
         window.agent.connect($("#agent-address").value);
       }
