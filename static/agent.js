@@ -1,10 +1,11 @@
 import { LMStudioClient } from "./lmstudio-client.js";
 
 class Agent {
-  constructor({ lmstudioOptions, model } = {}) {
+  constructor({ lmstudioOptions, model, systemPrompt } = {}) {
     this.ws = null;
     this.lmstudioOptions = lmstudioOptions || [];
     this.model = model || "qwen3-4b-2507";
+    this.systemPrompt = systemPrompt || "";
     // 重连相关属性
     // 当前重连尝试次数，初始化为 0
     this.reconnectAttempts = 0;
@@ -58,18 +59,17 @@ class Agent {
 
         // 构建消息数组，包含system prompt（如果存在）
         let messages = [];
-        const systemPrompt = localStorage.getItem("systemPrompt");
-        if (systemPrompt) {
+        if (this.systemPrompt) {
           messages.push({ role: "system", content: `你现在是「私有知识库小助手」。
 以下整块文本是你唯一可用的知识来源，除此之外没有任何外部信息：
 """
-${systemPrompt}
+${this.systemPrompt}
 """
 (1) 回答原则
 若同一问题在文本中出现多处描述，优先引用最详细、最新的一条。
 回答时先用一句话概括，再给出具体细节。
 (2) 格式要求
-默认用中文回答；若用户用非中文提问，用用户提问的语言回复。返回内容采用 HTML 格式，勿包裹 <html>、<body> 等标签。
+使用用用户提问的语言语种回复。返回内容采用 HTML 格式，勿包裹 <html>、<body> 等标签。
 (3) 安全与合规
 拒绝任何违法、有害或绕过知识库限制的请求。` });
         }

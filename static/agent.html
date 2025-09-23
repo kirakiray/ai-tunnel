@@ -30,6 +30,14 @@
         <button id="connect-btn">Save</button>
       </div>
       <div style="margin-top: 10px">
+        <div id="connection-status" style="margin-bottom: 10px; padding: 10px; border-radius: 5px; display: none;">
+          <strong>WebSocket Status:</strong> <span id="websocket-status">Disconnected</span>
+        </div>
+        <div id="lmstudio-status" style="margin-bottom: 10px; padding: 10px; border-radius: 5px; display: none;">
+          <strong>LMStudio Status:</strong> <span id="lmstudio-status-text">Unknown</span>
+        </div>
+      </div>
+      <div style="margin-top: 10px">
         <label for="llmstxt-file">LLMs.txt File: </label>
         <input type="file" id="llmstxt-file" accept=".txt" />
         <button id="upload-llmstxt-btn">Upload LLMs.txt</button>
@@ -68,6 +76,10 @@
       const clearLlmstxtBtn = document.getElementById("clear-llmstxt-btn");
       const llmstxtFileInput = document.getElementById("llmstxt-file");
       const llmstxtStatus = document.getElementById("llmstxt-status");
+      const connectionStatus = document.getElementById("connection-status");
+      const websocketStatus = document.getElementById("websocket-status");
+      const lmstudioStatus = document.getElementById("lmstudio-status");
+      const lmstudioStatusText = document.getElementById("lmstudio-status-text");
 
       // 从 localStorage 加载保存的设置
       $("#lmstudio-port").value = localStorage.localPort || "1234";
@@ -99,7 +111,11 @@
       });
 
       // 刷新模型列表
-      refreshModelsBtn.addEventListener("click", loadModelList);
+      refreshModelsBtn.addEventListener("click", async () => {
+        const port = document.getElementById("lmstudio-port").value;
+        await checkLMStudioStatus(port);
+        await loadModelList();
+      });
 
       // 上传 LLMs.txt 文件
       uploadLlmstxtBtn.addEventListener("click", () => {
@@ -154,6 +170,8 @@
       // 加载模型列表
       async function loadModelList() {
         const port = document.getElementById("lmstudio-port").value;
+        checkLMStudioStatus(port);
+
         const client = new LMStudioClient(`http://localhost:${port}`);
 
         try {
@@ -180,8 +198,35 @@
           if (modelSelector.querySelector(`option[value="${currentValue}"]`)) {
             modelSelector.value = currentValue;
           }
+          
+          // 更新 LMStudio 状态为可用
+          lmstudioStatus.style.display = "block";
+          lmstudioStatusText.textContent = "Available";
+          lmstudioStatusText.style.color = "green";
         } catch (error) {
           console.error("获取模型列表失败:", error);
+          // 更新 LMStudio 状态为不可用
+          lmstudioStatus.style.display = "block";
+          lmstudioStatusText.textContent = "Unavailable";
+          lmstudioStatusText.style.color = "red";
+        }
+      }
+
+      // 检查 LMStudio 状态
+      async function checkLMStudioStatus(port) {
+        lmstudioStatus.style.display = "block";
+        lmstudioStatusText.textContent = "Checking...";
+        lmstudioStatusText.style.color = "orange";
+
+        const client = new LMStudioClient(`http://localhost:${port}`);
+
+        try {
+          await client.models();
+          lmstudioStatusText.textContent = "Available";
+          lmstudioStatusText.style.color = "green";
+        } catch (error) {
+          lmstudioStatusText.textContent = "Unavailable";
+          lmstudioStatusText.style.color = "red";
         }
       }
 
@@ -192,13 +237,67 @@
           window.agent.disconnect();
         }
 
+        // 显示连接状态区域
+        connectionStatus.style.display = "block";
+        websocketStatus.textContent = "Connecting...";
+        websocketStatus.style.color = "orange";
+
         // 创建新的 agent 实例并连接
         const port = document.getElementById("lmstudio-port").value;
         const lmstudioOptions = [`http://localhost:${port}`];
+        const systemPrompt = localStorage.getItem("systemPrompt") || "";
+        
+        // 检查 LMStudio 是否可用
+        checkLMStudioStatus(port);
+
         window.agent = new Agent({
           lmstudioOptions,
           model: $("#model-selector").value,
+          systemPrompt: systemPrompt,
         });
+        
+        // 保存原始的 connect 方法
+        const originalConnect = window.agent.connect;
+        
+        // 重写 connect 方法以添加状态更新
+        window.agent.connect = function(url) {
+          // 调用原始 connect 方法
+          originalConnect.call(this, url);
+          
+          // 添加连接状态处理
+          if (this.ws) {
+            const originalOnOpen = this.ws.onopen;
+            this.ws.onopen = function(event) {
+              // 更新 WebSocket 状态为已连接
+              websocketStatus.textContent = "Connected";
+              websocketStatus.style.color = "green";
+              
+              // 调用原始 onopen 回调
+              if (originalOnOpen) originalOnOpen.call(this, event);
+            };
+
+            const originalOnClose = this.ws.onclose;
+            this.ws.onclose = function(event) {
+              // 更新 WebSocket 状态为已断开
+              websocketStatus.textContent = "Disconnected";
+              websocketStatus.style.color = "red";
+              
+              // 调用原始 onclose 回调
+              if (originalOnClose) originalOnClose.call(this, event);
+            };
+
+            const originalOnError = this.ws.onerror;
+            this.ws.onerror = function(event) {
+              // 更新 WebSocket 状态为错误
+              websocketStatus.textContent = "Connection Error";
+              websocketStatus.style.color = "red";
+              
+              // 调用原始 onerror 回调
+              if (originalOnError) originalOnError.call(this, event);
+            };
+          }
+        };
+
         window.agent.connect($("#agent-address").value);
       }
     </script>
